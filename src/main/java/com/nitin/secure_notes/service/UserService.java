@@ -24,8 +24,14 @@ public class UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
+
+        String resolvedName = request.getName();
+        if (resolvedName == null || resolvedName.isBlank()) {
+            resolvedName = resolveNameFromEmail(request.getEmail());
+        }
+
         User user = User.builder()
-                .name(request.getName())
+                .name(resolvedName)
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(List.of("ROLE_USER"))
@@ -56,5 +62,11 @@ public class UserService {
                 .build();
     }
 
-
+    private String resolveNameFromEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return "User";
+        }
+        int atIndex = email.indexOf('@');
+        return atIndex > 0 ? email.substring(0, atIndex) : email;
     }
+}
