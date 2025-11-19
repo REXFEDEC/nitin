@@ -2,30 +2,37 @@ package com.nitin.secure_notes.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    private static final String SECRET = "my-secret-key-my-secret-key-my-secret-key"; // 32+ chars
-    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
-    // Secret key
-    private final long EXPIRATION = 1000 * 60 * 60; // 1 hour
+    private final Key key;
+    private final long expirationMs;
 
-    // Generate JWT token
+    public JwtUtil(@Value("${jwt.secret}") String secret,
+                   @Value("${jwt.expiration-ms}") long expirationMs) {
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalArgumentException("JWT secret must be at least 32 characters long");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expirationMs = expirationMs;
+    }
+
     public String generateToken(String username) {
         return Jwts.builder()
-                .setSubject(username) // usually email
+                .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key)
                 .compact();
     }
 
-    // Extract username (subject) from token
     public String extractUsername(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -35,12 +42,10 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    // Check if token is valid
     public boolean isTokenValid(String token, String username) {
         return extractUsername(token).equals(username) && !isTokenExpired(token);
     }
 
-    // Check if token is expired
     public boolean isTokenExpired(String token) {
         Date expiry = Jwts.parserBuilder()
                 .setSigningKey(key)

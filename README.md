@@ -10,15 +10,14 @@ A Spring Boot + MongoDB backend that provides JWT-protected APIs for registering
 2. **Git repository access** to this project (fork or direct repo).
 3. **MongoDB instance** reachable from Railway (Railway Mongo add-on or external cluster).
 4. **Java 17** and **Maven** locally if you need to build/test before deployment.
-
-> **Note:** Before deploying, update `src/main/resources/application.properties` so the server picks up Railway's injected port: `server.port=${PORT:9090}`. Railway sets `PORT` at runtime; without this change the service will still listen on 9090.
+5. Environment variables ready for deployment (see step 5 below for details).
 
 ---
 
 ## Deploying to Railway
 
 1. **Prepare the repository**
-   - Commit the port change mentioned above if you have not already.
+   - Commit any changes if you have not already.
    - Push your repository to GitHub/GitLab.
 
 2. **Create a new project on Railway**
@@ -36,8 +35,9 @@ A Spring Boot + MongoDB backend that provides JWT-protected APIs for registering
 
 5. **Set environment variables** (Project → Variables):
    - `SPRING_DATA_MONGODB_URI` → your Mongo URI (Railway Mongo plugin exposes this as `MONGODB_URL`).
-   - `JWT_SECRET` (optional) → replace the hardcoded secret if you refactor `JwtUtil` to read from env.
-   - `PORT` → leave blank; Railway injects it automatically. Ensure the property override described earlier is present.
+   - `JWT_SECRET` → 32+ character secret used to sign tokens.
+   - `JWT_EXPIRATION_MS` (optional) → token lifetime in milliseconds (default 3600000 for 1 hour).
+   - `PORT` → leave unset; Railway injects it automatically and the app already consumes `${PORT}`.
 
 6. **Redeploy**
    - Trigger a deploy from the Railway dashboard (Redeploy button) or push a new commit. Deployment logs will show Maven build → JAR launch.
@@ -73,31 +73,5 @@ A Spring Boot + MongoDB backend that provides JWT-protected APIs for registering
 
 ---
 
-## Suggested Vercel v0 Prompt
-
-Use the following prompt in [Vercel v0](https://v0.dev/) to scaffold a frontend that integrates with this backend:
-
-```text
-Create a responsive React (Next.js) UI for a "Secure Notes" app that consumes these backend endpoints:
-- POST /api/auth/register
-- POST /api/auth/login
-- POST /api/notes/create
-- GET /api/notes/fetch
-- PUT /api/notes/{id}
-- DELETE /api/notes/{id}
-
-Requirements:
-1. Auth pages for register + login with validation. Store JWT in memory (React state) and automatically attach it as an Authorization Bearer header for protected requests.
-2. Notes dashboard showing a list of the user's notes (title + content) fetched from /api/notes/fetch on load. Provide create, edit, and delete interactions with optimistic UI updates.
-3. Modal or inline form for creating/editing notes. Use Tailwind CSS for styling with a muted neutral palette and accent color for primary buttons.
-4. Global error + success toasts, loading indicators, and graceful handling of expired tokens (redirect to login).
-5. Configuration section (e.g., environment or .env example) where the API base URL can be set, defaulting to a placeholder Railway deployment URL.
-
-Generate React components, pages, and a simple state management approach (React Context or hooks) to coordinate auth state and API calls.
-```
-
----
-
 ## Next Steps
-- Replace the hard-coded JWT secret in `JwtUtil` with an environment variable for production.
-- Add integration tests or Postman collection documenting sample requests and responses.
+- Review the source code for implementation details and further customization options.
